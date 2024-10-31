@@ -26,7 +26,32 @@
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+SimpleQueue::SimpleQueue() : front(0), rear(0) {}
+
+bool SimpleQueue::is_empty() {
+  return front == rear;
+}
+
+bool SimpleQueue::is_full() {
+  return (rear + 1) % MAX_SIZE == front;
+}
+
+void SimpleQueue::push(Thread* thread) {
+  if (!is_full()) {
+    queue[rear] = thread;
+    rear = (rear + 1) % MAX_SIZE;
+  }
+  // If full, you may want to add error handling here (optional)
+}
+
+Thread* SimpleQueue::pop() {
+  if (!is_empty()) {
+    Thread* thread = queue[front];
+    front = (front + 1) % MAX_SIZE;
+    return thread;
+  }
+  return nullptr;  // Return nullptr if queue is empty
+}
 
 /*--------------------------------------------------------------------------*/
 /* CONSTANTS */
@@ -58,9 +83,8 @@ void Scheduler::yield() {
   }
 
   // Select the next thread from the front of the queue
-  if (!ready_queue.empty()) {
-    current_thread = ready_queue.front();
-    ready_queue.pop();
+  if (!ready_queue.is_empty()) {
+    current_thread = ready_queue.pop();
     Thread::dispatch_to(current_thread);  // Context switch to the next thread
   }
   else{
@@ -87,13 +111,13 @@ void Scheduler::terminate(Thread * _thread) {
   //std::lock_guard<std::mutex> lock(queue_mutex);
 
   // Remove the thread from the ready queue 
-  std::queue<Thread*> temp_queue;
+  SimpleQueue temp_queue;
 
   // Transfer threads from ready_queue to temp_queue, skipping _thread
   
-  
-  while (!ready_queue.empty()) {// **Possible concurrency issues we may need a lock or mutex here**
-    Thread* front_thread = ready_queue.front();
+  // **Possible concurrency issues we may need a lock or mutex here**
+  while (!ready_queue.is_empty()) {
+    Thread* front_thread = ready_queue.pop();
     ready_queue.pop();
     if (front_thread != _thread) {
       temp_queue.push(front_thread);
@@ -101,7 +125,7 @@ void Scheduler::terminate(Thread * _thread) {
   }
 
   // Restore remaining threads back to the original queue
-  ready_queue = std::move(temp_queue);
+  ready_queue = temp_queue;
   
 
 }

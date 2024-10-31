@@ -20,8 +20,7 @@
 /*--------------------------------------------------------------------------*/
 
 #include "thread.H"
-#include <queue>
-#include <mutex>
+
 
 /*--------------------------------------------------------------------------*/
 /* !!! IMPLEMENTATION HINT !!! */
@@ -51,6 +50,23 @@
      such as 'FIFOScheduler'.)
     
  */
+class SimpleQueue {
+public:
+   static const int MAX_SIZE = 100;  // Set a fixed max size; adjust as needed
+
+   SimpleQueue();       // Constructor to initialize the queue
+   bool is_empty();     // Check if the queue is empty
+   bool is_full();      // Check if the queue is full
+
+   void push(Thread* thread);  // Add a thread to the queue
+   Thread* pop();              // Remove and return the front thread from the queue
+   
+private:
+   Thread* queue[MAX_SIZE];  // Array to store pointers to threads
+   int front;                // Index of the front element
+   int rear;                 // Index where the next element will be added
+};
+
 
 /*--------------------------------------------------------------------------*/
 /* SCHEDULER */
@@ -59,9 +75,9 @@
 class Scheduler {
 
   /* The scheduler may need private members... */
-   std::queue<Thread*> ready_queue;
+   SimpleQueue ready_queue;
    Thread* current_thread;
-   std::mutex queue_mutex;
+   //std::mutex queue_mutex;
   
 public:
 

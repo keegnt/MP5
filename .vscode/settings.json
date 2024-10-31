@@ -5,6 +5,8 @@
         "kernel.C": "cpp",
         "thread.C": "cpp",
         "scheduler.C": "cpp",
-        "utils.C": "cpp"
+        "utils.C": "cpp",
+        "exceptions.C": "cpp",
+        "assert.C": "cpp"
     }
 }
