@@ -20,6 +20,8 @@
 /*--------------------------------------------------------------------------*/
 
 #include "thread.H"
+#include <queue>
+#include <mutex>
 
 /*--------------------------------------------------------------------------*/
 /* !!! IMPLEMENTATION HINT !!! */
@@ -57,6 +59,9 @@
 class Scheduler {
 
   /* The scheduler may need private members... */
+   std::queue<Thread*> ready_queue;
+   Thread* current_thread;
+   std::mutex queue_mutex;
   
 public:
 
@@ -94,3 +99,4 @@ public:
 	
 
 #endif
+
