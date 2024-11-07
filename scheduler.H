@@ -50,21 +50,25 @@
      such as 'FIFOScheduler'.)
     
  */
-class SimpleQueue {
+class LinkedList {
 public:
-   static const int MAX_SIZE = 100;  // Set a fixed max size; adjust as needed
+   LinkedList();               // Constructor to initialize the list
+   ~LinkedList();              // Destructor to clean up all nodes
 
-   SimpleQueue();       // Constructor to initialize the queue
-   bool is_empty();     // Check if the queue is empty
-   bool is_full();      // Check if the queue is full
+   bool is_empty() const;      // Check if the list is empty
+   void add(Thread* thread);   // Add a thread to the end of the list
+   bool remove(Thread* thread); // Remove a specific thread from the list
+   Thread* pop_front();        // Remove and return the first thread from the list
 
-   void push(Thread* thread);  // Add a thread to the queue
-   Thread* pop();              // Remove and return the front thread from the queue
-   
 private:
-   Thread* queue[MAX_SIZE];  // Array to store pointers to threads
-   int front;                // Index of the front element
-   int rear;                 // Index where the next element will be added
+   struct Node {               // Node structure for linked list
+      Thread* thread;
+      Node* next;
+      Node(Thread* t) : thread(t), next(nullptr) {}
+   };
+
+   Node* head;                 // Pointer to the first node
+   Node* tail;                 // Pointer to the last node
 };
 
 
@@ -74,8 +78,10 @@ private:
 
 class Scheduler {
 
+private:
   /* The scheduler may need private members... */
-   SimpleQueue ready_queue;
+   static Scheduler* current_scheduler;  // Static pointer to the current scheduler
+   LinkedList ready_queue;
    Thread* current_thread;
    //std::mutex queue_mutex;
   
@@ -89,6 +95,8 @@ public:
    /* NOTE: We are making all functions virtual. This may come in handy when
             you want to derive RRScheduler from this class. */
   
+  static Scheduler* CurrentScheduler() { return current_scheduler; }  // Returns the current scheduler instance
+
    virtual void yield();
    /* Called by the currently running thread in order to give up the CPU. 
       The scheduler selects the next thread from the ready queue to load onto 
@@ -111,7 +119,7 @@ public:
       Graciously handle the case where the thread wants to terminate itself.*/
   
 };
-	
+extern Scheduler* SYSTEM_SCHEDULER;
 	
 
 #endif

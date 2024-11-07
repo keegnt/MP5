@@ -10,7 +10,7 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -26,31 +26,81 @@
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
 
-SimpleQueue::SimpleQueue() : front(0), rear(0) {}
+struct Node {
+  Thread* thread;
+  Node* next;
 
-bool SimpleQueue::is_empty() {
-  return front == rear;
+  Node(Thread* t) : thread(t), next(nullptr) {}
+};
+
+
+LinkedList::LinkedList() : head(nullptr), tail(nullptr) {}
+
+// Add a thread to the end of the list
+void LinkedList::add(Thread* t) {
+    Node* new_node = new Node(t);
+    if (!head) {
+        head = tail = new_node;
+    } else {
+        tail->next = new_node;
+        tail = new_node;
+    }
 }
 
-bool SimpleQueue::is_full() {
-  return (rear + 1) % MAX_SIZE == front;
-}
+// Remove a specific thread from the list
+bool LinkedList::remove(Thread* t) {
+  Node* prev = nullptr;
+  Node* current = head;
 
-void SimpleQueue::push(Thread* thread) {
-  if (!is_full()) {
-    queue[rear] = thread;
-    rear = (rear + 1) % MAX_SIZE;
+  while (current) {
+    if (current->thread == t) {
+      if (prev) {
+        prev->next = current->next;
+      } else {
+        head = current->next;
+      }
+
+      if (current == tail) {
+        tail = prev;
+      }
+
+      delete current;
+      return true;
+    }
+    prev = current;
+    current = current->next;
   }
-  // If full, you may want to add error handling here (optional)
+  return false; // Thread not found
 }
 
-Thread* SimpleQueue::pop() {
-  if (!is_empty()) {
-    Thread* thread = queue[front];
-    front = (front + 1) % MAX_SIZE;
-    return thread;
+// Pop the first thread from the list and return it
+Thread* LinkedList::pop_front() {
+  if (!head) return nullptr;
+  
+  Node* node_to_remove = head;
+  Thread* t = node_to_remove->thread;
+
+  head = head->next;
+  if (!head) {
+    tail = nullptr;
   }
-  return nullptr;  // Return nullptr if queue is empty
+
+  delete node_to_remove;
+  return t;
+}
+
+// Check if the list is empty
+bool LinkedList::is_empty() const {
+return head == nullptr;
+}
+
+// Destructor to clean up all nodes
+LinkedList::~LinkedList() {
+while (head) {
+  Node* next = head->next;
+  delete head;
+  head = next;
+}
 }
 
 /*--------------------------------------------------------------------------*/
@@ -69,22 +119,24 @@ Thread* SimpleQueue::pop() {
 /* METHODS FOR CLASS   S c h e d u l e r  */
 /*--------------------------------------------------------------------------*/
 
+Scheduler* Scheduler::current_scheduler = nullptr;  // Definition and initialization
+
 Scheduler::Scheduler() : current_thread(nullptr) {
   //current thread is nullptr for now
   //may need to figure out an idle thread later
-
+  current_scheduler = this;
   Console::puts("Constructed Scheduler.\n");
 }
 
 void Scheduler::yield() {
   // Add the currently running thread to the end of the ready queue
   if (current_thread) {
-    ready_queue.push(current_thread);
+    ready_queue.add(current_thread);
   }
 
   // Select the next thread from the front of the queue
   if (!ready_queue.is_empty()) {
-    current_thread = ready_queue.pop();
+    current_thread = ready_queue.pop_front();
     Thread::dispatch_to(current_thread);  // Context switch to the next thread
   }
   else{
@@ -94,39 +146,25 @@ void Scheduler::yield() {
 }
 
 void Scheduler::resume(Thread * _thread) {
-  ready_queue.push(_thread);
+  ready_queue.add(_thread);
 }
 
 void Scheduler::add(Thread * _thread) {
   resume(_thread);
 }
 
-void Scheduler::terminate(Thread * _thread) {
+void Scheduler::terminate(Thread * _thread) {  
+  // Lock the queue to prevent concurrent access
+  //std::lock_guard<std::mutex> lock(queue_mutex);
+
+  // Remove the specified thread from the ready queue
+  ready_queue.remove(_thread);
+
+  // If the thread being terminated is the currently running thread
   if (_thread == current_thread) {
     // Yield the CPU to ensure this thread finishes gracefully
     yield();
   }
-  
-  // Lock the queue to prevent concurrent access
-  //std::lock_guard<std::mutex> lock(queue_mutex);
-
-  // Remove the thread from the ready queue 
-  SimpleQueue temp_queue;
-
-  // Transfer threads from ready_queue to temp_queue, skipping _thread
-  
-  // **Possible concurrency issues we may need a lock or mutex here**
-  while (!ready_queue.is_empty()) {
-    Thread* front_thread = ready_queue.pop();
-    ready_queue.pop();
-    if (front_thread != _thread) {
-      temp_queue.push(front_thread);
-    }
-  }
-
-  // Restore remaining threads back to the original queue
-  ready_queue = temp_queue;
-  
 
 }
 

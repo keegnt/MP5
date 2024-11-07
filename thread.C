@@ -37,6 +37,10 @@
 
 #include "threads_low.H"
 
+#include "machine.H"//for enabling interrupts
+
+#include "scheduler.H"
+
 /*--------------------------------------------------------------------------*/
 /* EXTERNS */
 /*--------------------------------------------------------------------------*/
@@ -72,17 +76,27 @@ static void thread_shutdown() {
        It terminates the thread by releasing memory and any other resources held by the thread. 
        This is a bit complicated because the thread termination interacts with the scheduler.
      */
+    Thread* current_thread = Thread::CurrentThread();
+    Console::puts("ME: terminating thread #");
+    Console::puti(current_thread->ThreadId());
+    Console::puts("\n");
 
-    assert(false);
-    /* Let's not worry about it for now. 
-       This means that we should have non-terminating thread functions. 
-    */
+    
+
+    // Use SYSTEM_SCHEDULER to terminate the current thread
+    SYSTEM_SCHEDULER->terminate(current_thread);
+        
+
+
+    //assert(false);   
+    
 }
 
 static void thread_start() {
-     /* This function is used to release the thread for execution in the ready queue. */
-    
-     /* We need to add code, but it is probably nothing more than enabling interrupts. */
+    /* This function is used to release the thread for execution in the ready queue. */
+    Machine::enable_interrupts();
+
+    /* We need to add code, but it is probably nothing more than enabling interrupts. */
 }
 
 void Thread::setup_context(Thread_Function _tfunction){
